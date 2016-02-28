@@ -88,21 +88,21 @@ def sendFile():
 def readTemp():
 	#tempval = (temp.getTemp("f") -  32) * 5/9 # replace f with c to get celcius
 	tempval = temp.getTemp("c")
-	print "Current temp from sensor 1: " + str(tempval) + "\n" #need to turn into string before building strings
+	print "Current temp from sensor 1: " + str(tempval) #need to turn into string before building strings
 	writeFile("temp", tempval)
 	t = threading.Timer(TEMP_PERIOD, readTemp)
 	t.start()
 
 def readGyro():
 	gyroVals = gyro.get() # Returns a full xyz list [x,y,z] realtime (integers/degrees)
-	print "Gyroscope X: "+str(gyroVals[0])+" Y: "+str(gyroVals[1])+" Z: "+str(gyroVals[2]) + "\n"
+	print "Gyroscope X: "+str(gyroVals[0])+" Y: "+str(gyroVals[1])+" Z: "+str(gyroVals[2])
 	writeFile("gyro", gyroVals[0], gyroVals[1], gyroVals[2])
 	t = threading.Timer(GYRO_PERIOD, readGyro)
 	t.start()
 
 def readMagno():
 	magnoVals = magno.get() # Above
-	print "Magnometer X: "+str(magnoVals[0])+" Y: "+str(magnoVals[1])+" Z: "+str(magnoVals[2]) + "\n"
+	print "Magnometer X: "+str(magnoVals[0])+" Y: "+str(magnoVals[1])+" Z: "+str(magnoVals[2])
 	writeFile("magno", magnoVals[0], magnoVals[1], magnoVals[2])
 	t = threading.Timer(MAGNO_PERIOD, readMagno)
 	t.start()
@@ -114,7 +114,7 @@ def readAccel():
 	if (abs(oldAccelVals[0] - accelVals[0]) > ACCEL_TRESHOLD) or \
 			(abs(oldAccelVals[1] - accelVals[1]) > ACCEL_TRESHOLD) or \
 			(abs(oldAccelVals[2] - accelVals[2]) > ACCEL_TRESHOLD):
-		print "Accelerometer X: "+str(accelVals[0])+" Y: "+str(accelVals[1])+" Z: "+str(accelVals[2]) + "\n"
+		print "Accelerometer X: "+str(accelVals[0])+" Y: "+str(accelVals[1])+" Z: "+str(accelVals[2])
 		writeFile("accel", accelVals[0], accelVals[1], accelVals[2])
 
 	oldAccelVals = accelVals[:]
