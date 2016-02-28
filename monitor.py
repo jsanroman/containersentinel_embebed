@@ -28,11 +28,11 @@ URL_SEND = config.get('monitor', 'endpoint')
 gyro = Accel() # new objects p.s. this will auto initialize the device onboard
 accel = Gyro()
 magno = Magno()
+temp = Temp()
 
-temp = Temp() # init objects p.s. I auto initialize/reset the modules on these calls
-
+ # Reset current values to 0
 accel.calibrate()
-gyro.calibrate() # Reset current values to 0
+gyro.calibrate()
 magno.calibrate()
 
 lock = threading.Lock()
@@ -103,7 +103,7 @@ def readMagno():
 
 def readAccel():
 	global oldAccelVals
-	accelVals = accel.get() # Same as gyro return xyz of current displacment force
+	accelVals = accel.get() # Same as gyro return xyz of current displacement force
 
 	if (abs(oldAccelVals[0] - accelVals[0]) > ACCEL_TRESHOLD) or \
 			(abs(oldAccelVals[1] - accelVals[1]) > ACCEL_TRESHOLD) or \
