@@ -86,7 +86,7 @@ def sendFile():
 		print "++++++++++++++++++++++++++++ HTTP status code = " + str(r.status_code)
 		if r.status_code == 200 or r.status_code == 204:
 			os.remove(DATA_FILE)
-		print "++++++++++++++++++++++++++++ File sent"
+			print "++++++++++++++++++++++++++++ File sent"
 	except:
 		pass
 	lock.release()
