@@ -39,12 +39,14 @@ lock = threading.Lock()
 oldAccelVals = accel.get()
 
 def getLocation():
-	r = requests.get("http://freegeoip.net/json/")
-	if r.status_code != 200:
+	try:
+		r = requests.get("http://freegeoip.net/json/")
+		if r.status_code != 200:
+			return None
+		d = json.loads(r.content)
+		return [d['latitude'], d['longitude']]
+	except:
 		return None
-	d = json.loads(r.content)
-	print str(d['latitude']) + " " + str(d['longitude'])
-	return [d['latitude'], d['longitude']]
 
 def writeFile(dataType, d1, d2 = None, d3 = None):
 	lock.acquire()
@@ -60,21 +62,26 @@ def writeFile(dataType, d1, d2 = None, d3 = None):
 	lock.release()
 
 def sendFile():
-	print "Sending file..."
+	print "++++++++++++++++++++++++++++ Sending file..."
 	coords = getLocation()
 	if coords == None:
-		print 'No network connection'
-		return
-	writeFile("gps", coords[0], coords[1])
+		print '++++++++++++++++++++++++++++ No network connection'
+	else:
+		writeFile("gps", coords[0], coords[1])
 
-	lock.acquire()
-	with open(DATA_FILE, 'r') as myfile:
-		data=myfile.read()
-	r = requests.post(URL_SEND, data = {'device_id' : DEVICE_ID, 'data' : data})
-	print "HTTP status code = " + str(r.status_code)
-	if r.status_code == 200 or r.status_code == 204:
-		os.remove(DATA_FILE)
-	lock.release()
+		lock.acquire()
+		try:
+			with open(DATA_FILE, 'r') as myfile:
+				data=myfile.read()
+			r = requests.post(URL_SEND, data = {'device_id' : DEVICE_ID, 'data' : data})
+			print "++++++++++++++++++++++++++++ HTTP status code = " + str(r.status_code)
+			if r.status_code == 200 or r.status_code == 204:
+				os.remove(DATA_FILE)
+		except:
+			pass
+		lock.release()
+		print "++++++++++++++++++++++++++++ File sent"
+
 	t = threading.Timer(SEND_FILE_PERIOD, sendFile)
 	t.start()
 
