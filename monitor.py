@@ -1,7 +1,7 @@
-from neo import Accel # import accelerometer
-from neo import Magno # import magnometer
-from neo import Gyro # import gyroscope
-from neo import Temp #import libraries
+from neo import Accel
+from neo import Magno
+from neo import Gyro
+from neo import Temp
 
 import os
 import time
@@ -90,11 +90,7 @@ def readMagno():
 
 def readAccel():
 	global oldAccelVals
-
 	accelVals = accel.get() # Same as gyro return xyz of current displacment force
-
-	#print "Accelerometer X *******: "+str(accelVals[0])+" Y: "+str(accelVals[1])+" Z: "+str(accelVals[2]) + "\n"
-	#print "Accelerometer X ///////: "+str(oldAccelVals[0])+" Y: "+str(oldAccelVals[1])+" Z: "+str(oldAccelVals[2]) + "\n"
 
 	if (abs(oldAccelVals[0] - accelVals[0]) > ACCEL_TRESHOLD) or \
 			(abs(oldAccelVals[1] - accelVals[1]) > ACCEL_TRESHOLD) or \
