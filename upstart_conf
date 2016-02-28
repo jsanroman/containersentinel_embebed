@@ -1,4 +1,4 @@
-# Upstart configuration. Copiar en /etc/init/load_control.conf
+# Upstart configuration. Copiar en /etc/init/load_control_embeded.conf
 
 description "monitor"
 
@@ -9,6 +9,6 @@ respawn
 console log
 setuid root
 setgid root
-chdir /usr/local/
+chdir /usr/local/load_control_embebed
 
-exec /usr/local/monitor.py monitor
+exec /usr/local/load_control_embebed/monitor.py monitor
