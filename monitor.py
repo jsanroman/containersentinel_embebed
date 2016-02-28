@@ -1,4 +1,4 @@
-#!/bin/python
+#!/usr/bin/python
 
 from neo import Accel
 from neo import Magno
@@ -10,11 +10,10 @@ import time
 import threading
 import requests
 import ConfigParser
+import json
 
 config = ConfigParser.RawConfigParser()
 config.read(r'monitor.cfg')
-
-HOSTNAME = "www.google.com"
 
 DEVICE_ID = config.get('monitor', 'device_id')
 TEMP_PERIOD = config.getfloat('monitor', 'temp_period')
@@ -39,15 +38,24 @@ magno.calibrate()
 lock = threading.Lock()
 oldAccelVals = accel.get()
 
-def check_ping():
-    response = os.system("ping -c 1 " + HOSTNAME)
-    # and then check the response... True if has network
-    return response == 0
+def getLocation():
+	r = requests.get("http://freegeoip.net/json/")
+	if r.status_code != 200:
+		return None
+	d = json.loads(r.content)
+	print d['latitude'] + " " + d['longitude']
+	return {d['latitude'], d['longitude']}
 
 def writeFile(dataType, d1, d2 = None, d3 = None):
+	coords = getLocation()
+	if coords == None:
+		print 'No network connection'
+		return
+	print 'coords = ' + str(coords)
+	writeFile("gps", coords[0], coords[1])
+
 	lock.acquire()
 	ts = int(time.time() * 1000)
-
 	with open(DATA_FILE,"a+") as f:
 		line = str(ts) + ", " + dataType + ", " + str(d1)
 		if d2 is not None:
@@ -64,7 +72,8 @@ def sendFile():
 	with open(DATA_FILE, 'r') as myfile:
 		data=myfile.read()
 	r = requests.post(URL_SEND, data = {'device_id' : DEVICE_ID, 'data' : data})
-	if r.status_code == 200:
+	print "HTTP status code = " + str(r.status_code)
+	if r.status_code == 200 or r.status_code == 204:
 		os.remove(DATA_FILE)
 	lock.release()
 	t = threading.Timer(SEND_FILE_PERIOD, sendFile)
