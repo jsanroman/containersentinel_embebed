@@ -11,6 +11,8 @@ import threading
 import requests
 import ConfigParser
 import json
+import serial
+import time
 
 config = ConfigParser.RawConfigParser()
 config.read(r'monitor.cfg')
@@ -21,6 +23,7 @@ GYRO_PERIOD = config.getfloat('monitor', 'gyro_period')
 MAGNO_PERIOD = config.getfloat('monitor', 'magno_period')
 ACCEL_PERIOD = config.getfloat('monitor', 'accel_period')
 ACCEL_TRESHOLD = config.getfloat('monitor', 'accel_treshold')
+GPS_PERIOD = config.getfloat('monitor', 'gps_period')
 SEND_FILE_PERIOD = config.getfloat('monitor', 'send_file_period')
 DATA_FILE = config.get('monitor', 'data_file')
 URL_SEND = config.get('monitor', 'endpoint')
@@ -37,6 +40,9 @@ magno.calibrate()
 
 lock = threading.Lock()
 oldAccelVals = accel.get()
+
+ser = serial.Serial('/dev/ttyUSB0',9600,timeout=1)
+ser.flushOutput()
 
 def getLocation():
 	try:
@@ -65,7 +71,7 @@ def writeFile(dataType, d1, d2 = None, d3 = None):
 	lock.release()
 
 def sendFile():
-	# print "++++++++++++++++++++++++++++ Sending file..."
+	print "++++++++++++++++++++++++++++ Sending file..."
 	# coords = getLocation()
 	# if coords == None:
 	# 	print '++++++++++++++++++++++++++++ No network connection'
@@ -84,14 +90,13 @@ def sendFile():
 	except:
 		pass
 	lock.release()
-
 	t = threading.Timer(SEND_FILE_PERIOD, sendFile)
 	t.start()
 
 def readTemp():
 	#tempval = (temp.getTemp("f") -  32) * 5/9 # replace f with c to get celcius
 	tempval = temp.getTemp("c")
-	print "Current temp from sensor 1: " + str(tempval) #need to turn into string before building strings
+	print "Temperature: " + str(tempval) #need to turn into string before building strings
 	writeFile("temp", tempval)
 	t = threading.Timer(TEMP_PERIOD, readTemp)
 	t.start()
@@ -124,10 +129,34 @@ def readAccel():
 	t = threading.Timer(ACCEL_PERIOD, readAccel)
 	t.start()
 
+def readGps():
+	print "Search for location"
+	while True:
+		r = ser.readline()
+		if r.startswith("$GPRMC"):
+			print r
+			fields = r.split(",")
+			if fields[2] == "A":
+				if fields[4] == "N":
+					lat = float(fields[3]) / 100
+				else:
+					lat = -float(fields[3]) / 100
+				if fields[6] == "E":
+					lon = float(fields[5]) / 100
+				else:
+					lon = -float(fields[5]) / 100
+				print str(lat) + ", " + str(lon)
+				writeFile("gps", lat, lon)
+			else:
+				break
+	t = threading.Timer(GPS_PERIOD, readGps)
+	t.start()
+
 readTemp()
 readGyro()
 readMagno()
 readAccel()
+readGps()
 sendFile()
 
 
