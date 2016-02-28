@@ -43,17 +43,10 @@ def getLocation():
 	if r.status_code != 200:
 		return None
 	d = json.loads(r.content)
-	print d['latitude'] + " " + d['longitude']
-	return {d['latitude'], d['longitude']}
+	print str(d['latitude']) + " " + str(d['longitude'])
+	return [d['latitude'], d['longitude']]
 
 def writeFile(dataType, d1, d2 = None, d3 = None):
-	coords = getLocation()
-	if coords == None:
-		print 'No network connection'
-		return
-	print 'coords = ' + str(coords)
-	writeFile("gps", coords[0], coords[1])
-
 	lock.acquire()
 	ts = int(time.time() * 1000)
 	with open(DATA_FILE,"a+") as f:
@@ -68,6 +61,12 @@ def writeFile(dataType, d1, d2 = None, d3 = None):
 
 def sendFile():
 	print "Sending file..."
+	coords = getLocation()
+	if coords == None:
+		print 'No network connection'
+		return
+	writeFile("gps", coords[0], coords[1])
+
 	lock.acquire()
 	with open(DATA_FILE, 'r') as myfile:
 		data=myfile.read()
