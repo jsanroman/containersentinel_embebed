@@ -1,0 +1,14 @@
+# Upstart configuration. Copiar en /etc/init/load_control.conf
+
+description "monitor"
+
+start on runlevel [2345]
+stop on runlevel [016]
+
+respawn
+console log
+setuid root
+setgid root
+chdir /usr/local/
+
+exec /usr/local/monitor.py monitor
