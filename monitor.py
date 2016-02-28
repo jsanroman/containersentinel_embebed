@@ -1,4 +1,4 @@
-#!/bin/python
+#!/usr/bin/python
 
 from neo import Accel
 from neo import Magno
@@ -10,11 +10,10 @@ import time
 import threading
 import requests
 import ConfigParser
+import json
 
 config = ConfigParser.RawConfigParser()
 config.read(r'monitor.cfg')
-
-HOSTNAME = "www.google.com"
 
 DEVICE_ID = config.get('monitor', 'device_id')
 TEMP_PERIOD = config.getfloat('monitor', 'temp_period')
@@ -29,25 +28,27 @@ URL_SEND = config.get('monitor', 'endpoint')
 gyro = Accel() # new objects p.s. this will auto initialize the device onboard
 accel = Gyro()
 magno = Magno()
+temp = Temp()
 
-temp = Temp() # init objects p.s. I auto initialize/reset the modules on these calls
-
+ # Reset current values to 0
 accel.calibrate()
-gyro.calibrate() # Reset current values to 0
+gyro.calibrate()
 magno.calibrate()
 
 lock = threading.Lock()
 oldAccelVals = accel.get()
 
-def check_ping():
-    response = os.system("ping -c 1 " + HOSTNAME)
-    # and then check the response... True if has network
-    return response == 0
+def getLocation():
+	r = requests.get("http://freegeoip.net/json/")
+	if r.status_code != 200:
+		return None
+	d = json.loads(r.content)
+	print str(d['latitude']) + " " + str(d['longitude'])
+	return [d['latitude'], d['longitude']]
 
 def writeFile(dataType, d1, d2 = None, d3 = None):
 	lock.acquire()
 	ts = int(time.time() * 1000)
-
 	with open(DATA_FILE,"a+") as f:
 		line = str(ts) + ", " + dataType + ", " + str(d1)
 		if d2 is not None:
@@ -60,11 +61,18 @@ def writeFile(dataType, d1, d2 = None, d3 = None):
 
 def sendFile():
 	print "Sending file..."
+	coords = getLocation()
+	if coords == None:
+		print 'No network connection'
+		return
+	writeFile("gps", coords[0], coords[1])
+
 	lock.acquire()
 	with open(DATA_FILE, 'r') as myfile:
 		data=myfile.read()
 	r = requests.post(URL_SEND, data = {'device_id' : DEVICE_ID, 'data' : data})
-	if r.status_code == 200:
+	print "HTTP status code = " + str(r.status_code)
+	if r.status_code == 200 or r.status_code == 204:
 		os.remove(DATA_FILE)
 	lock.release()
 	t = threading.Timer(SEND_FILE_PERIOD, sendFile)
@@ -94,7 +102,7 @@ def readMagno():
 
 def readAccel():
 	global oldAccelVals
-	accelVals = accel.get() # Same as gyro return xyz of current displacment force
+	accelVals = accel.get() # Same as gyro return xyz of current displacement force
 
 	if (abs(oldAccelVals[0] - accelVals[0]) > ACCEL_TRESHOLD) or \
 			(abs(oldAccelVals[1] - accelVals[1]) > ACCEL_TRESHOLD) or \
