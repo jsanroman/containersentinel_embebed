@@ -1,3 +1,5 @@
+#!/bin/python
+
 from neo import Accel
 from neo import Magno
 from neo import Gyro
