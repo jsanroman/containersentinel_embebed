@@ -57,13 +57,15 @@ def writeFile(dataType, d1, d2 = None, d3 = None):
 	lock.release()
 
 def sendFile():
+	print "Sending file..."
 	lock.acquire()
 	with open(DATA_FILE, 'r') as myfile:
 		data=myfile.read()
 	r = requests.post(URL_SEND, data = {'device_id' : DEVICE_ID, 'data' : data})
-	r.status_code
+	if r.status_code == 200:
+		os.remove(DATA_FILE)
 	lock.release()
-	t = threading.Timer(SEND_FILE_PERIOD, readTemp)
+	t = threading.Timer(SEND_FILE_PERIOD, sendFile)
 	t.start()
 
 def readTemp():
