@@ -7,18 +7,22 @@ import os
 import time
 import threading
 import requests
+import ConfigParser
 
-URL_SEND = "http://fake.url/data"
+config = ConfigParser.RawConfigParser()
+config.read(r'monitor.cfg')
+
 HOSTNAME = "www.google.com"
 
-TEMP_PERIOD = 10
-GYRO_PERIOD = 1
-MAGNO_PERIOD = 1
-ACCEL_PERIOD = 0.2
-
-DATA_FILE = "file.dat"
-
-ACCEL_TRESHOLD = 200
+DEVICE_ID = config.get('monitor', 'device_id')
+TEMP_PERIOD = config.getfloat('monitor', 'temp_period')
+GYRO_PERIOD = config.getfloat('monitor', 'gyro_period')
+MAGNO_PERIOD = config.getfloat('monitor', 'magno_period')
+ACCEL_PERIOD = config.getfloat('monitor', 'accel_period')
+ACCEL_TRESHOLD = config.getfloat('monitor', 'accel_treshold')
+SEND_FILE_PERIOD = config.getfloat('monitor', 'send_file_period')
+DATA_FILE = config.get('monitor', 'data_file')
+URL_SEND = config.get('monitor', 'endpoint')
 
 gyro = Accel() # new objects p.s. this will auto initialize the device onboard
 accel = Gyro()
@@ -56,9 +60,11 @@ def sendFile():
 	lock.acquire()
 	with open(DATA_FILE, 'r') as myfile:
 		data=myfile.read()
-	r = requests.post(URL_SEND, data = {'data' : data})
+	r = requests.post(URL_SEND, data = {'device_id' : DEVICE_ID, 'data' : data})
 	r.status_code
 	lock.release()
+	t = threading.Timer(SEND_FILE_PERIOD, readTemp)
+	t.start()
 
 def readTemp():
 	#tempval = (temp.getTemp("f") -  32) * 5/9 # replace f with c to get celcius
@@ -104,6 +110,7 @@ readTemp()
 readGyro()
 readMagno()
 readAccel()
+sendFile()
 
 
 
